@@ -2,8 +2,8 @@
 
 from sys import exit, stdin
 from pickle import Pickler, Unpickler
-from error import *
-from enforcers import enforce_integer
+from crust.error import *
+from crust.enforcers import enforce_integer
 
 
 
@@ -32,6 +32,7 @@ class Environment(object):
     def write(self, data):
 
         self.writer.dump(data)
+
 
 
 class Shell(object):

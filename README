@@ -1,0 +1,31 @@
+NOTICE: prealpha shit, may be insecure as fuck, unstable or just regular PITA.
+
+== Short description ==
+
+Crust supplies you with a minimal shell-substitute to host via sshd as an
+interface for some automation tasks.
+
+A daemon for some cooler stuff might come along at some point, too.
+
+A lot of automation solutions seem to do this sort of stuff by just giving
+automation tools access to a full shell, or at best a shell that white- or
+blacklists the executables the shell is allowed to use.
+
+This seems like a bad idea™.
+
+As far as I understand, this still means that the shell with a maybe
+turing-complete command set as well as all callable executables can
+expose their own flaws.
+
+Crust tries to mitigate this by just supplying a minimal pseudo-shell
+that offers it's own commands instead of letting users directly call
+system executables.
+
+
+=== Using this shit ===
+
+Currently, there's very little code, none that does anything representing
+any real use-case and there's not installation procedure.
+
+To try the pseudoshell append this repositories' root directory to you
+PYTHONPATH environment-variable and call the 'bin/crust' script.
