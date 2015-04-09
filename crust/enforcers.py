@@ -1,4 +1,4 @@
-from error import ShellValidationError
+from error import CommandValidationError
 
 
 
@@ -10,4 +10,4 @@ def enforce_integer(value):
 
     except Exception as e:
 
-        raise ShellValidationError('%s: %s' % (e.__class__.__name__, e.message))
+        raise CommandValidationError('%s: %s' % (e.__class__.__name__, e.message))

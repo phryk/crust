@@ -1,12 +1,12 @@
-class ShellException(Exception):
+class Crustception(Exception):
         pass
 
 
 
-class ShellValidationError(ShellException):
+class CommandValidationError(Crustception):
         pass
 
 
 
-class ShellExecutionError(ShellException):
+class CommandExecutionError(Crustception):
         pass
