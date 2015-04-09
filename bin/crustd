@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from sys import exit
+from time import sleep
 from crust.daemon import Daemon
 
 
@@ -9,11 +10,17 @@ from crust.daemon import Daemon
 def main():
 
     print "instantiating daemon."
-    daemon = Daemon()
-    daemon.start()
-    print "entering loop"
-    while True:
-        pass
+    daemon = Daemon('/tmp/crust')
+
+    try:
+        daemon.start()
+
+    except Exception as e:
+        print e
+        return 1
+
+    print "Oh, ye of little faith!"
+    return 0
 
 
 

@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from socket import socket, AF_UNIX, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR, SHUT_RDWR
+from socket import error as socketError
+from os import unlink, path
 from pickle import Pickler, Unpickler
-from .ipc import IPCServer
 from .error import * # TODO: assess how much, if any, risk 'import *' poses.
 from .enforcers import *
 
@@ -35,18 +37,27 @@ class Environment(object):
 
 class Daemon(object):
 
+    addr = None
+    command_list = None
+    connected = None
     debug = None
     environment = None
-    running = None
-    command_list = None
-    ipc_server = None
+    max_command_size = None
 
     
-    def __init__(self, debug=False):
+    def __init__(self, addr, max_command_size=4096, debug=False):
 
-        self.running = False
+        try:
+            unlink(addr)
+        except OSError:
+            if path.exists(addr):
+                raise
+
+        self.addr = addr
+        self.connected = False
+        self.max_command_size = max_command_size
         self.debug = debug
-        self.environment = Environment
+        self.environment = Environment()
 
         self.command_list = {
             '': EmptyCommand,
@@ -54,31 +65,67 @@ class Daemon(object):
             'test': TestCommand
         }
 
-        self.ipc_server = IPCServer('/tmp/crust', listener=self)
+        sock = socket(AF_UNIX, SOCK_STREAM)
+        sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        sock.bind(addr)
+        sock.listen(0)
+
+        self.sock = sock
 
 
-
-    def __call__(self, command_line):
-
-        try:
-
-            command = self.read_command(command_line)
-            return command()
-
-        except Crustception:
-
-            return "ERROR: Shit happened."
-
-
-    
     def start(self):
 
         self.running = True
-        self.ipc_server.start()
+        self.loop()
 
 
+    def loop(self):
 
-    def read_command(self, command_line):
+        while self.running:
+
+            connected = True
+            (conn, addr) = self.sock.accept()
+            
+            while connected:
+
+                # Get new command line from file socket
+                command_line = conn.recv(self.max_command_size).decode('utf-8')
+
+                try:
+                    command = self.parse_command(command_line)
+
+                except CommandValidationError as e:
+
+                    conn.send("ERROR: Command validation failed.")
+
+                    if self.debug == True:
+                        print "Non-fatal exception for command validation."
+                        print e
+
+                    continue # restart loop of this connection
+
+                try:
+                    return_message = command()
+
+                except CommandExecutionError as e:
+                    conn.send("ERROR: Command execution failed.")
+
+                    if self.debug is True:
+                        print "Exception for command execution."
+                        print e
+
+
+                try:
+                    conn.send(return_message)
+
+                except socketError as e:
+                    #print "Mystery Exception: ", e.__class__, dir(e)
+                    conn.shutdown(SHUT_RDWR)
+                    conn.close()
+                    connected = False
+
+
+    def parse_command(self, command_line):
 
         print "Daemon read triggered."
 
@@ -102,6 +149,11 @@ class Daemon(object):
             command.bind_param(idx, value)
 
         return command
+
+
+    def kill(self):
+
+        self.running = False
 
 
 class Command(object):
